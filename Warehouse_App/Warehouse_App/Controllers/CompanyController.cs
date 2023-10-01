@@ -1,43 +1,93 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Runtime.InteropServices;
+using Warehouse_App.Dtos;
+using Warehouse_App.Models;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace Warehouse_App.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/companies")]
     [ApiController]
     public class CompanyController : ControllerBase
     {
+        private readonly ICompanyRepo repo;
+
+        public CompanyController(ICompnanyRepo repository)
+        {
+            repo = repository;
+        }
+
         // GET: api/<CompanyController>
         [HttpGet]
-        public IEnumerable<string> Get()
+        public async Task<IEnumerable<CompanyDto>> Get()
         {
-            return new string[] { "value1", "value2" };
+            var result = await repo.GetAll();
+            return result.Select(r => new CompanyDto(r.name, r.city, r.address, r.owner, r.email, r.created));
         }
 
         // GET api/<CompanyController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet]
+        [Route("{companyId}", Name = "GetCompany")]
+        public async Task<ActionResult<CompanyDto>> Get(int companyId)
         {
-            return "value";
+            var result = await repo.Get(companyId);
+
+            if(result == null)
+            {
+                return NotFound();
+            }
+            return new CompanyDto(Company.Name, Company.city, Company.address, Company.owner, Company.email, Company.created);
         }
 
         // POST api/<CompanyController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<ActionResult<CompanyDto>> Post(CreateCompanyDto createCompanyDto)
         {
+            var result = new Company(name = createCompanyDto.name, city = createCompanyDto.city, address = createCompanyDto.address, owner = createCompanyDto.owner, email = createCompanyDto.email, created = DateTime.Now);
+            await repo.Add(result);
+
+            return CreatedAtAction("GetCompany", new { companyId = result.Id}, new CompanyDto(result.Name, result.city, result.address, result.owner, result.email, result.created))
         }
 
         // PUT api/<CompanyController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut("{companyId}")]
+        public async Task<ActionResult<CompanyDto>> Put(int companyId, EditCompanyDto editCompanyDto)
         {
+            var result = await repo.Get(companyId);
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            result.name = editCompanyDto.name;
+            result.city = editCompanyDto.city;
+            result.address = editCompanyDto.address;
+            result.owner = editCompanyDto.owner;
+            result.email = editCompanyDto.email;
+
+            await repo.Update(result);
+
+            return Ok(new CompanyDto(result.Name, result.city, result.address, result.owner, result.email, result.created));
+
         }
 
         // DELETE api/<CompanyController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<ActionResult> Delete(int companyId)
         {
+            var result = await repo.Get(companyId);
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            await repo.Delete(companyId);
+
+            return NoContent();
+
         }
     }
 }

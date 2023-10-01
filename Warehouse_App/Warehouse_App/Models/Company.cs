@@ -8,5 +8,6 @@
         public string address { get; set; }
         public string owner { get; set; }
         public string email { get; set; }
+        public DateTime created { get; set; }
     }
 }
