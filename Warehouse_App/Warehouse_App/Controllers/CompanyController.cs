@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Runtime.InteropServices;
 using Warehouse_App.Dtos;
 using Warehouse_App.Models;
 using Warehouse_App.Repos;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -12,29 +14,33 @@ namespace Warehouse_App.Controllers
     [ApiController]
     public class CompanyController : ControllerBase
     {
-        private readonly ICompanyRepo repo;
+        private readonly AppDB appDB;
 
-        public CompanyController(ICompanyRepo repository)
+        public CompanyController(AppDB DB)
         {
-            repo = repository;
+            appDB = DB;
         }
 
         // GET: api/<CompanyController>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IEnumerable<CompanyDto>> Get()
         {
-            var result = await repo.GetMany();
+            var result = await appDB.Companies.ToListAsync();
             return result.Select(r => new CompanyDto(r.name, r.city, r.address, r.owner, r.email, r.created));
         }
 
         // GET api/<CompanyController>/5
         [HttpGet]
         [Route("{companyId}", Name = "GetCompany")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<CompanyDto>> Get(int companyId)
         {
-            var result = await repo.GetOne(companyId);
+            var result = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
 
-            if(result == null)
+            if (result == null)
             {
                 return NotFound();
             }
@@ -43,19 +49,26 @@ namespace Warehouse_App.Controllers
 
         // POST api/<CompanyController>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<ActionResult<CompanyDto>> Post(CreateCompanyDto createCompanyDto)
         {
             var result = new Company { name = createCompanyDto.name, city = createCompanyDto.city, address = createCompanyDto.address, owner = createCompanyDto.owner, email = createCompanyDto.email, created = DateTime.Now };
-            await repo.Create(result);
+            appDB.Companies.Add(result);
+            await appDB.SaveChangesAsync();
 
             return CreatedAtRoute("GetCompany", new { companyId = result.companyId }, result);
         }
 
         // PUT api/<CompanyController>/5
         [HttpPut("{companyId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<ActionResult<CompanyDto>> Put(int companyId, EditCompanyDto editCompanyDto)
         {
-            var result = await repo.GetOne(companyId);
+            var result = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
 
             if (result == null)
             {
@@ -68,27 +81,37 @@ namespace Warehouse_App.Controllers
             result.owner = editCompanyDto.owner;
             result.email = editCompanyDto.email;
 
-            await repo.Update(result);
+            if (ModelState.IsValid)
+            {
+                appDB.Companies.Update(result);
+                await appDB.SaveChangesAsync();
 
-            return Ok(new CompanyDto(result.name, result.city, result.address, result.owner, result.email, result.created));
+                return Ok(new CompanyDto(result.name, result.city, result.address, result.owner, result.email, result.created));
+            }
+            else
+            {
+                return UnprocessableEntity("");
+            }
 
         }
 
         // DELETE api/<CompanyController>/5
         [HttpDelete("{companyId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult> Delete(int companyId)
         {
-            var result = await repo.GetOne(companyId);
-
+            var result = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (result == null)
             {
                 return NotFound();
             }
-
-            await repo.Delete(result);
-
-            return NoContent();
-
+            else
+            {
+                appDB.Companies.Remove(result);
+                await appDB.SaveChangesAsync();
+                return NoContent();
+            }
         }
     }
 }
