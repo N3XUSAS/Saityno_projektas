@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.Design;
 using Warehouse_App.Dtos;
 using Warehouse_App.Models;
-using Warehouse_App.Repos;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -26,10 +25,37 @@ namespace Warehouse_App.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IEnumerable<WarehouseDto>> Get([FromRoute] int companyId)
+        //public async Task<IEnumerable<WarehouseDto>> Get([FromRoute] int companyId)
+        //{
+
+        //    var company = await appDB.Companies.FindAsync(companyId);
+        //    if (company == null)
+        //    {
+        //        return NotFound("Company do not exist");
+        //    }
+        //    else 
+        //    {
+        //        var result = await appDB.Warehouses.Where(w => w.Company.companyId == companyId).ToListAsync();
+        //        return result.Select(w => new WarehouseDto(w.city, w.address, w.maneger));
+        //    }
+
+        //}
+        public async Task<IActionResult> Get([FromRoute] int companyId)
         {
-            var result = await appDB.Warehouses.Where(w => w.Company.companyId == companyId).ToListAsync();
-            return result.Select(w => new WarehouseDto(w.city, w.address, w.maneger));
+            var company = await appDB.Companies.FindAsync(companyId);
+
+            if (company == null)
+            {
+                return NotFound("Company does not exist");
+            }
+            else
+            {
+                var result = await appDB.Warehouses.Where(w => w.Company.companyId == companyId)
+                                                    .Select(w => new WarehouseDto(w.city, w.address, w.maneger))
+                                                    .ToListAsync();
+
+                return Ok(result);
+            }
         }
 
         //GET api/<CompanyController>/5
@@ -39,15 +65,22 @@ namespace Warehouse_App.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<WarehouseDto>> Get(int warehouseId, [FromRoute] int companyId)
         {
-            var company = await appDB.Warehouses.FindAsync(companyId);
+            var company = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (company == null)
             {
-                return NotFound("Company is not found");
+                return NotFound("Company does not exist");
             }
             else
             {
                 var result = await appDB.Warehouses.FirstOrDefaultAsync(w => w.warehouseId == warehouseId && w.Company.companyId == companyId);
-                return Ok( new WarehouseDto(result.city, result.address, result.maneger));
+                if (result == null)
+                {
+                    return NotFound("Warehouse does not exist");
+                }
+                else
+                {
+                    return Ok(new WarehouseDto(result.city, result.address, result.maneger));
+                }
             }
             
         }
@@ -57,20 +90,29 @@ namespace Warehouse_App.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<WarehouseDto>> Post([FromBody] WarehouseDto warehouseDto, [FromRoute] int companyId)
         {
             var company = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (company == null)
             {
-                return NotFound("Company is not found");
+                return NotFound("Company does not exist");
             }
             else
             {
                 var result = new Warehouse { city = warehouseDto.city, address = warehouseDto.address, maneger = warehouseDto.maneger, Company = company };
-                appDB.Warehouses.Add(result);
-                await appDB.SaveChangesAsync();
+                if (ModelState.IsValid)
+                {
+                    appDB.Warehouses.Add(result);
+                    await appDB.SaveChangesAsync();
 
-                return CreatedAtRoute("GetWarehouse", new { warehouseId = result.warehouseId, companyId = companyId }, result);
+                    return CreatedAtRoute("GetWarehouse", new { warehouseId = result.warehouseId, companyId = companyId }, result);
+                }
+                else
+                {
+                    return UnprocessableEntity();
+                }
+                
             }
         }
 
@@ -79,28 +121,29 @@ namespace Warehouse_App.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<WarehouseDto>> Put(int warehouseId, [FromRoute] int companyId, WarehouseDto warehouseDto)
         {
             var company = await appDB.Warehouses.FindAsync(companyId);
             if (company == null)
             {
-                return NotFound();
+                return NotFound("Company does not exist");
             }
             else
             {
                 var result = await appDB.Warehouses.FirstOrDefaultAsync(w => w.warehouseId == warehouseId && w.Company.companyId == companyId);
                 if (result == null)
                 {
-                    return NotFound();
+                    return NotFound("Warehouse dose not exist");
                 }
                 else
                 {
-                    result.city = warehouseDto.city;
-                    result.address = warehouseDto.address;
-                    result.maneger = warehouseDto.maneger;
-
                     if(ModelState.IsValid)
                     {
+                        result.city = warehouseDto.city;
+                        result.address = warehouseDto.address;
+                        result.maneger = warehouseDto.maneger;
+                    
                         appDB.Warehouses.Update(result);
                         await appDB.SaveChangesAsync();
 
@@ -120,17 +163,17 @@ namespace Warehouse_App.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult> Delete(int warehouseId, [FromRoute] int companyId)
         {
-            var company = await appDB.Warehouses.FindAsync(companyId);
+            var company = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (company == null)
             {
-                return NotFound();
+                return NotFound("Company does not exist");
             }
             else
             {
                 var result = await appDB.Warehouses.FirstOrDefaultAsync(w => w.warehouseId == warehouseId && w.Company.companyId == companyId);
                 if (result == null)
                 {
-                    return NotFound();
+                    return NotFound("Warehouse does not exist");
                 }
                 else
                 {

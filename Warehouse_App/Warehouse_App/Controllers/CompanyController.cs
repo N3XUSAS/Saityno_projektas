@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using System.Runtime.InteropServices;
 using Warehouse_App.Dtos;
 using Warehouse_App.Models;
-using Warehouse_App.Repos;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -42,7 +41,7 @@ namespace Warehouse_App.Controllers
 
             if (result == null)
             {
-                return NotFound();
+                return NotFound("Company does not exist");
             }
             return new CompanyDto(result.name, result.city, result.address, result.owner, result.email, result.created);
         }
@@ -52,13 +51,22 @@ namespace Warehouse_App.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<CompanyDto>> Post(CreateCompanyDto createCompanyDto)
         {
-            var result = new Company { name = createCompanyDto.name, city = createCompanyDto.city, address = createCompanyDto.address, owner = createCompanyDto.owner, email = createCompanyDto.email, created = DateTime.Now };
-            appDB.Companies.Add(result);
-            await appDB.SaveChangesAsync();
+            if(ModelState.IsValid)
+            {
+                var result = new Company { name = createCompanyDto.name, city = createCompanyDto.city, address = createCompanyDto.address, owner = createCompanyDto.owner, email = createCompanyDto.email, created = DateTime.Now };
+                appDB.Companies.Add(result);
+                await appDB.SaveChangesAsync();
 
-            return CreatedAtRoute("GetCompany", new { companyId = result.companyId }, result);
+                return CreatedAtRoute("GetCompany", new { companyId = result.companyId }, result);
+            }
+            else
+            {
+                return UnprocessableEntity("Wrong data");
+            }
+            
         }
 
         // PUT api/<CompanyController>/5
@@ -66,23 +74,23 @@ namespace Warehouse_App.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<CompanyDto>> Put(int companyId, EditCompanyDto editCompanyDto)
         {
             var result = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
 
             if (result == null)
             {
-                return NotFound();
+                return NotFound("Company does not exist");
             }
-
-            result.name = editCompanyDto.name;
-            result.city = editCompanyDto.city;
-            result.address = editCompanyDto.address;
-            result.owner = editCompanyDto.owner;
-            result.email = editCompanyDto.email;
-
-            if (ModelState.IsValid)
-            {
+            else if (ModelState.IsValid)
+            { 
+                result.name = editCompanyDto.name;
+                result.city = editCompanyDto.city;
+                result.address = editCompanyDto.address;
+                result.owner = editCompanyDto.owner;
+                result.email = editCompanyDto.email;
+            
                 appDB.Companies.Update(result);
                 await appDB.SaveChangesAsync();
 
@@ -104,7 +112,7 @@ namespace Warehouse_App.Controllers
             var result = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (result == null)
             {
-                return NotFound();
+                return NotFound("Company does not exist");
             }
             else
             {
