@@ -51,7 +51,7 @@ namespace Warehouse_App.Controllers
             else
             {
                 var result = await appDB.Warehouses.Where(w => w.Company.companyId == companyId)
-                                                    .Select(w => new WarehouseDto(w.city, w.address, w.maneger))
+                                                    .Select(w => new WarehouseDto(w.warehouseId, w.city, w.address, w.maneger))
                                                     .ToListAsync();
 
                 return Ok(result);
@@ -79,7 +79,7 @@ namespace Warehouse_App.Controllers
                 }
                 else
                 {
-                    return Ok(new WarehouseDto(result.city, result.address, result.maneger));
+                    return Ok(new WarehouseDto(result.warehouseId, result.city, result.address, result.maneger));
                 }
             }
             
@@ -147,7 +147,7 @@ namespace Warehouse_App.Controllers
                         appDB.Warehouses.Update(result);
                         await appDB.SaveChangesAsync();
 
-                        return Ok(new WarehouseDto(result.city, result.address, result.maneger));
+                        return Ok(new WarehouseDto(result.warehouseId, result.city, result.address, result.maneger));
                     }
                     else
                     {

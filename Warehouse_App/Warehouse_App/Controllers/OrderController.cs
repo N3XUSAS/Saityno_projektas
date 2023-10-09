@@ -65,14 +65,10 @@ namespace Warehouse_App.Controllers
 
                     var result = await appDB.Orders
                         .Where(o => o.warehouse.warehouseId == warehouseId && o.warehouse.Company.companyId == companyId)
+                        .Select(o => new OrderDto(o.orderId, o.code, o.deliveryCity, o.deliveryAddress, o.weigth, o.size, o.phone, o.created))
                         .ToListAsync();
 
-                    if (result.Count == 0)
-                    {
-                        return NoContent(); // Return 204 No Content when no orders are found.
-                    }
-
-                    return Ok(result.Select(o => new OrderDto(o.code, o.deliveryCity, o.deliveryAddress, o.weigth, o.size, o.phone, o.created)));
+                    return Ok(result);
                 }
             }
         }
@@ -105,7 +101,7 @@ namespace Warehouse_App.Controllers
                     }
                     else
                     {
-                        return Ok(new OrderDto(result.code, result.deliveryCity, result.deliveryAddress, result.weigth, result.size, result.phone, result.created));
+                        return Ok(new OrderDto(result.orderId, result.code, result.deliveryCity, result.deliveryAddress, result.weigth, result.size, result.phone, result.created));
                     }
                 }
             }
@@ -188,7 +184,7 @@ namespace Warehouse_App.Controllers
                             appDB.Orders.Update(result);
                             await appDB.SaveChangesAsync();
 
-                            return Ok(new OrderDto(result.code, result.deliveryCity, result.deliveryAddress, result.weigth, result.size, result.phone, result.created));
+                            return Ok(new OrderDto(result.orderId, result.code, result.deliveryCity, result.deliveryAddress, result.weigth, result.size, result.phone, result.created));
                         }
                         else
                         {

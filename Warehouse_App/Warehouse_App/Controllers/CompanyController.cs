@@ -27,7 +27,7 @@ namespace Warehouse_App.Controllers
         public async Task<IEnumerable<CompanyDto>> Get()
         {
             var result = await appDB.Companies.ToListAsync();
-            return result.Select(r => new CompanyDto(r.name, r.city, r.address, r.owner, r.email, r.created));
+            return result.Select(r => new CompanyDto(r.companyId, r.name, r.city, r.address, r.owner, r.email, r.created));
         }
 
         // GET api/<CompanyController>/5
@@ -43,7 +43,7 @@ namespace Warehouse_App.Controllers
             {
                 return NotFound("Company does not exist");
             }
-            return new CompanyDto(result.name, result.city, result.address, result.owner, result.email, result.created);
+            return new CompanyDto(result.companyId, result.name, result.city, result.address, result.owner, result.email, result.created);
         }
 
         // POST api/<CompanyController>
@@ -94,7 +94,7 @@ namespace Warehouse_App.Controllers
                 appDB.Companies.Update(result);
                 await appDB.SaveChangesAsync();
 
-                return Ok(new CompanyDto(result.name, result.city, result.address, result.owner, result.email, result.created));
+                return Ok(new CompanyDto(result.companyId, result.name, result.city, result.address, result.owner, result.email, result.created));
             }
             else
             {

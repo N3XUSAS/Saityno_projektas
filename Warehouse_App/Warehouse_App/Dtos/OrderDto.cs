@@ -2,7 +2,7 @@
 
 namespace Warehouse_App.Dtos
 {
-    public record OrderDto(string code, string deliveryCity, string deliveryAddress, double weight, string size, string phone, DateTime created);
+    public record OrderDto(int id, string code, string deliveryCity, string deliveryAddress, double weight, string size, string phone, DateTime created);
     public record CreateEditOrderDto(
         [Required][RegularExpression(@"^[a-zA-Z -]+$", ErrorMessage = "Only letters are allowed")][MaxLength(25, ErrorMessage = "Maximum 25 symbols are allowed")] string deliveryCity,
         [Required][MaxLength(50, ErrorMessage = "Maximum 50 symbols are allowed")] string deliveryAddress,
