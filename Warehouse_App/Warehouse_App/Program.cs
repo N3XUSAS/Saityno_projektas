@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddDbContext<AppDB>(option => { option.UseSqlServer(builder.Configuration.GetConnectionString("defaultSQLConnection")); });
+builder.Services.AddDbContext<AppDB>();
 
 builder.Services.AddControllers();
 
@@ -55,6 +55,10 @@ app.MapControllers();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+using var scope = app.Services.CreateScope();
+var dbContext = scope.ServiceProvider.GetRequiredService<AppDB>();
+dbContext.Database.Migrate();
 
 var dbSeeder = app.Services.CreateScope().ServiceProvider.GetRequiredService<Seeder>();
 await dbSeeder.SeedAsync();
