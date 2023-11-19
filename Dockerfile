@@ -7,7 +7,6 @@ COPY Warehouse_App/Warehouse_App/*.csproj .
 RUN dotnet restore -r linux-musl-x64 /p:PublishReadyToRun=true
 
 # copy everything else and build app
-COPY source/DemoRestSimonas2023/DemoRest20232/. .
 COPY Warehouse_App/Warehouse_App/. .
 RUN dotnet publish -c Release -o /app -r linux-musl-x64 --self-contained true --no-restore /p:PublishReadyToRun=true /p:PublishSingleFile=true
 
