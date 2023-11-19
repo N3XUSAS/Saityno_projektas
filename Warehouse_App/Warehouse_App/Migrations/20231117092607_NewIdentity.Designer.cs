@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Warehouse_App;
 
@@ -11,9 +12,11 @@ using Warehouse_App;
 namespace Warehouse_App.Migrations
 {
     [DbContext(typeof(AppDB))]
-    partial class AppDBModelSnapshot : ModelSnapshot
+    [Migration("20231117092607_NewIdentity")]
+    partial class NewIdentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

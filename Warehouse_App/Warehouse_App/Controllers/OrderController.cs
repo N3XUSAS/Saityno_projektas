@@ -1,6 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.Design;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Warehouse_App.Dtos;
 using Warehouse_App.Models;
 
@@ -14,39 +18,27 @@ namespace Warehouse_App.Controllers
     {
 
         private readonly AppDB appDB;
+        private readonly UserManager<User> _userManager;
 
-        public OrderController(AppDB DB)
+        public OrderController(AppDB DB, UserManager<User> userManager)
         {
             appDB = DB;
+            _userManager = userManager;
         }
 
         // GET: api/<OrderController>
         [HttpGet]
+        [Authorize(Roles = Roles.CompanyAdmin)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        //public async Task<IEnumerable<OrderDto>> Get([FromRoute] int companyId, [FromRoute] int warehouseId)
-        //{
-        //    var company = await appDB.Companies.FindAsync(companyId);
-        //    if(company == null)
-        //    {
-        //        return (IEnumerable<OrderDto>)NotFound("Company do not exist");
-        //    }
-        //    else
-        //    {
-        //        var warehouse = await appDB.Warehouses.FindAsync(warehouseId);
-        //        if(warehouse == null)
-        //        {
-        //            return (IEnumerable<OrderDto>)NotFound("Warehouse do not exist");
-        //        }
-        //        else
-        //        {
-        //            var result = await appDB.Orders.Where(o => o.warehouse.warehouseId == warehouseId && o.warehouse.Company.companyId == companyId).ToListAsync();
-        //            return result.Select(o => new OrderDto(o.code, o.deliveryCity, o.deliveryAddress, o.weigth, o.size, o.phone, o.created));
-        //        }
-        //    }
-        //}
         public async Task<IActionResult> Get([FromRoute] int companyId, [FromRoute] int warehouseId)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user.CompanyId != companyId)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var company = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (company == null)
             {
@@ -75,11 +67,18 @@ namespace Warehouse_App.Controllers
 
         // GET api/<OrderController>/5
         [HttpGet]
+        [Authorize(Roles = Roles.CompanyAdmin)]
         [Route("{orderId}", Name = "GetOrder")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<OrderDto>> Get(int orderId, [FromRoute] int warehouseId, [FromRoute] int companyId)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user.CompanyId != companyId)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var company = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (company == null)
             {
@@ -109,11 +108,18 @@ namespace Warehouse_App.Controllers
 
         // POST api/<OrderController>
         [HttpPost]
+        [Authorize(Roles = Roles.CompanyAdmin)]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<ActionResult<OrderDto>> Post([FromBody] CreateEditOrderDto createEditOrderDto, [FromRoute] int companyId, [FromRoute] int warehouseId)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user.CompanyId != companyId)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var company = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (company == null)
             {
@@ -148,11 +154,18 @@ namespace Warehouse_App.Controllers
 
         // PUT api/<OrderController>/5
         [HttpPut("{orderId}")]
+        [Authorize(Roles = Roles.CompanyAdmin)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<ActionResult<OrderDto>> Put(int orderId, [FromRoute] int warehouseId, [FromRoute] int companyId, CreateEditOrderDto createEditOrderDto)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user.CompanyId != companyId)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var company = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (company == null)
             {
@@ -198,10 +211,17 @@ namespace Warehouse_App.Controllers
 
         // DELETE api/<OrderController>/5
         [HttpDelete("{orderId}")]
+        [Authorize(Roles = Roles.CompanyAdmin)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult> Delete(int orderId, [FromRoute] int warehouseId, [FromRoute] int companyId)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user.CompanyId != companyId)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var company = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (company == null)
             {

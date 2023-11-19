@@ -1,6 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.Design;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Warehouse_App.Dtos;
 using Warehouse_App.Models;
 
@@ -14,10 +18,12 @@ namespace Warehouse_App.Controllers
     {
 
         private readonly AppDB appDB;
+        private readonly UserManager<User> _userManager;
 
-        public WarehouseController(AppDB DB)
+        public WarehouseController(AppDB DB, UserManager<User> userManager)
         {
             appDB = DB;
+            _userManager = userManager;
         }
 
         // GET: api/<WarehouseController>
@@ -25,23 +31,15 @@ namespace Warehouse_App.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        //public async Task<IEnumerable<WarehouseDto>> Get([FromRoute] int companyId)
-        //{
-
-        //    var company = await appDB.Companies.FindAsync(companyId);
-        //    if (company == null)
-        //    {
-        //        return NotFound("Company do not exist");
-        //    }
-        //    else 
-        //    {
-        //        var result = await appDB.Warehouses.Where(w => w.Company.companyId == companyId).ToListAsync();
-        //        return result.Select(w => new WarehouseDto(w.city, w.address, w.maneger));
-        //    }
-
-        //}
         public async Task<IActionResult> Get([FromRoute] int companyId)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            var role = await _userManager.GetRolesAsync(user);
+            if (user.CompanyId != companyId && role[0] != Roles.SystemAdmin)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var company = await appDB.Companies.FindAsync(companyId);
 
             if (company == null)
@@ -60,11 +58,18 @@ namespace Warehouse_App.Controllers
 
         //GET api/<CompanyController>/5
         [HttpGet]
+        [Authorize(Roles = Roles.CompanyAdmin)]
         [Route("{warehouseId}", Name = "GetWarehouse")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<WarehouseDto>> Get(int warehouseId, [FromRoute] int companyId)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user.CompanyId != companyId)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var company = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (company == null)
             {
@@ -87,12 +92,19 @@ namespace Warehouse_App.Controllers
 
         //POST api/<CompanyController>
         [HttpPost]
+        [Authorize(Roles = Roles.CompanyAdmin)]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<WarehouseDto>> Post([FromBody] WarehouseDto warehouseDto, [FromRoute] int companyId)
+        public async Task<ActionResult<WarehouseDto>> Post([FromBody] WarehousePostDto warehouseDto, [FromRoute] int companyId)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user.CompanyId != companyId)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var company = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (company == null)
             {
@@ -118,12 +130,19 @@ namespace Warehouse_App.Controllers
 
         // PUT api/<CompanyController>/5
         [HttpPut("{warehouseId}")]
+        [Authorize(Roles = Roles.CompanyAdmin)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<WarehouseDto>> Put(int warehouseId, [FromRoute] int companyId, WarehouseDto warehouseDto)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user.CompanyId != companyId)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var company = await appDB.Warehouses.FindAsync(companyId);
             if (company == null)
             {
@@ -159,10 +178,17 @@ namespace Warehouse_App.Controllers
 
         //// DELETE api/<CompanyController>/5
         [HttpDelete("{warehouseId}")]
+        [Authorize(Roles = Roles.CompanyAdmin)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult> Delete(int warehouseId, [FromRoute] int companyId)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user.CompanyId != companyId)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var company = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (company == null)
             {

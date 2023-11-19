@@ -1,6 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using System.Runtime.InteropServices;
+using System.Security.Claims;
 using Warehouse_App.Dtos;
 using Warehouse_App.Models;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
@@ -14,14 +18,17 @@ namespace Warehouse_App.Controllers
     public class CompanyController : ControllerBase
     {
         private readonly AppDB appDB;
+        private readonly UserManager<User> _userManager;
 
-        public CompanyController(AppDB DB)
+        public CompanyController(AppDB DB, UserManager<User> userManager)
         {
             appDB = DB;
+            _userManager = userManager;
         }
 
         // GET: api/<CompanyController>
         [HttpGet]
+        [Authorize(Roles = Roles.SystemAdmin)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IEnumerable<CompanyDto>> Get()
@@ -37,6 +44,13 @@ namespace Warehouse_App.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<CompanyDto>> Get(int companyId)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            var role = await _userManager.GetRolesAsync(user);
+            if (user.CompanyId != companyId && role[0] != Roles.SystemAdmin)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var result = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
 
             if (result == null)
@@ -48,6 +62,7 @@ namespace Warehouse_App.Controllers
 
         // POST api/<CompanyController>
         [HttpPost]
+        [Authorize(Roles = Roles.SystemAdmin)]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
@@ -77,6 +92,13 @@ namespace Warehouse_App.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<CompanyDto>> Put(int companyId, EditCompanyDto editCompanyDto)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            var role = await _userManager.GetRolesAsync(user);
+            if (user.CompanyId != companyId && role[0] != Roles.SystemAdmin)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var result = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
 
             if (result == null)
@@ -109,6 +131,13 @@ namespace Warehouse_App.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult> Delete(int companyId)
         {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            var role = await _userManager.GetRolesAsync(user);
+            if (user.CompanyId != companyId && role[0] != Roles.SystemAdmin)
+            {
+                return Forbid("You do not have permition for this action");
+            }
             var result = await appDB.Companies.FirstOrDefaultAsync(c => c.companyId == companyId);
             if (result == null)
             {
