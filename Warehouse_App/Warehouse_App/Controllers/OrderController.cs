@@ -137,7 +137,7 @@ namespace Warehouse_App.Controllers
                     if (ModelState.IsValid)
                     {
                         string generatedCode = Generator();
-                        var result = new Order { code = generatedCode, deliveryCity = createEditOrderDto.deliveryCity, deliveryAddress = createEditOrderDto.deliveryAddress, warehouse = warehouse, weigth = createEditOrderDto.weight, size = createEditOrderDto.size, phone = createEditOrderDto.phone, created = DateTime.Now };
+                        var result = new Order { code = generatedCode, deliveryCity = createEditOrderDto.deliveryCity, deliveryAddress = createEditOrderDto.deliveryAddress, warehouse = warehouse, weigth = createEditOrderDto.weight, size = createEditOrderDto.size, phone = createEditOrderDto.phone, created = DateTime.UtcNow };
                         appDB.Orders.Add(result);
                         await appDB.SaveChangesAsync();
 

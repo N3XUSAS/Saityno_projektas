@@ -71,7 +71,7 @@ namespace Warehouse_App.Controllers
         {
             if(ModelState.IsValid)
             {
-                var result = new Company { name = createCompanyDto.name, city = createCompanyDto.city, address = createCompanyDto.address, owner = createCompanyDto.owner, email = createCompanyDto.email, created = DateTime.Now };
+                var result = new Company { name = createCompanyDto.name, city = createCompanyDto.city, address = createCompanyDto.address, owner = createCompanyDto.owner, email = createCompanyDto.email, created = DateTime.UtcNow };
                 appDB.Companies.Add(result);
                 await appDB.SaveChangesAsync();
 
