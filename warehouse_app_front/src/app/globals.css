@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 255, 255, 255;
+    --background-end-rgb: 255, 255, 255;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+.bg1 {
+  background-color: #427d9d;
+}
+
+.bg2 {
+  background-color: #9bbec8;
+}
+
+.title {
+  font-size: 50;
+  color: white;
+}
+
+.Button {
+  color: #a9c5d6;
+}
+
+.Button.Mui-selected {
+  color: blue;
+}
+
+.Modal {
+  border-radius: 50%;
+}
+
+.customTableHead {
+  background-color: red;
+}
+
+:root {
+  --primary: #427d9d;
+  --secondary: #6096b4;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--secondary) var(--primary);
+}
+
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 15px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--primary);
+  border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--secondary);
+  border-radius: 14px;
+  border: 3px solid var(--primary);
+}
+
+.customTableCell {
+  color: "white";
+}
+
+@font-face {
+  font-family: Poppins;
+  src: url("/public/fonts/Poppins-ExtraBold.ttf");
+  format: ("ttf");
+  font-display: swap;
+}

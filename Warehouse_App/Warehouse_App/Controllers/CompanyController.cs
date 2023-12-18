@@ -107,7 +107,6 @@ namespace Warehouse_App.Controllers
             }
             else if (ModelState.IsValid)
             { 
-                result.name = editCompanyDto.name;
                 result.city = editCompanyDto.city;
                 result.address = editCompanyDto.address;
                 result.owner = editCompanyDto.owner;

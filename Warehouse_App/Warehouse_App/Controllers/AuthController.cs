@@ -59,6 +59,9 @@ namespace Warehouse_App.Controllers
                 Email = registerUserDto.email,
                 UserName = username,
                 CompanyId = registerUserDto.companyId,
+                Name = registerUserDto.name,
+                Surname = registerUserDto.surname,
+                CompanyName = registerUserDto.companyName,
             };
 
             var createUserResult = await _userManager.CreateAsync(newUser, registerUserDto.password);
@@ -70,7 +73,60 @@ namespace Warehouse_App.Controllers
 
             await _userManager.AddToRoleAsync(newUser, Roles.CompanyAdmin);
 
-            return CreatedAtAction(nameof(Register), new UserDto(newUser.Id, newUser.UserName, newUser.Email));
+            return CreatedAtAction(nameof(Register), new UserDto(newUser.Id, newUser.UserName, newUser.Email, newUser.Name, newUser.Surname));
+        }
+
+        [HttpPost]
+        [Authorize(Roles = Roles.CompanyAdmin)]
+        [Route("registerForCompany")]
+        public async Task<IActionResult> RegisterForCompany(RegisterCompanyUserDto registerUserDto)
+        {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId);
+            bool flag = false;
+            string username = "";
+            int cnt = 0;
+            while (!flag)
+            {
+                if (cnt != 0)
+                {
+                    username = cnt.ToString() + registerUserDto.name.Substring(0, 3).ToLower() + registerUserDto.surname.Substring(0, 3).ToLower();
+                }
+                else
+                {
+                    username = registerUserDto.name.Substring(0, 3).ToLower() + registerUserDto.surname.Substring(0, 3).ToLower();
+                }
+                var addedUser = await _userManager.FindByNameAsync(username);
+                if (addedUser == null)
+                {
+                    flag = true;
+                }
+                else
+                {
+                    cnt++;
+                }
+            }
+
+            var newUser = new User
+            {
+                Email = registerUserDto.email,
+                UserName = username,
+                CompanyId = user.CompanyId,
+                Name = registerUserDto.name,
+                Surname = registerUserDto.surname,
+                CompanyName = user.CompanyName,
+            };
+
+            var createUserResult = await _userManager.CreateAsync(newUser, registerUserDto.password);
+
+            if (!createUserResult.Succeeded)
+            {
+                return BadRequest("Error creating new user");
+            }
+
+            await _userManager.AddToRoleAsync(newUser, Roles.CompanyAdmin);
+
+            return CreatedAtAction(nameof(Register), new UserDto(newUser.Id, newUser.UserName, newUser.Email, newUser.Name, newUser.Surname));
         }
 
         [HttpPost]
@@ -140,7 +196,7 @@ namespace Warehouse_App.Controllers
         public async Task<IEnumerable<UserGetAdminDto>> GetAll()
         {
             var result = await appDB.AspNetUsers.ToListAsync();
-            return result.Select(r => new UserGetAdminDto(r.Id, r.UserName, r.Email, r.CompanyId));
+            return result.Select(r => new UserGetAdminDto(r.Id, r.UserName, r.Email, r.CompanyId, r.Name, r.Surname, r.CompanyName));
         }
 
         [HttpGet]
@@ -160,10 +216,25 @@ namespace Warehouse_App.Controllers
             else
             {
                 var result = await appDB.AspNetUsers.Where(w => w.CompanyId == user.CompanyId)
-                                                    .Select(w => new UserDto(w.Id, w.UserName, w.Email))
+                                                    .Select(w => new UserDto(w.Id, w.UserName, w.Email, w.Name, w.Surname))
                                                     .ToListAsync();
                 return Ok(result);
             }
+        }
+
+        [HttpGet]
+        [Route("getOne")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<UserGetAdminDto>> GetOne()
+        {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if(userId == null)
+            {
+                return BadRequest();
+            }
+            var user = await _userManager.FindByIdAsync(userId);
+            return new UserGetAdminDto(user.Id, user.UserName, user.Email, user.CompanyId, user.Name, user.Surname, user.CompanyName);
         }
 
         [HttpDelete("{delUserId}")]

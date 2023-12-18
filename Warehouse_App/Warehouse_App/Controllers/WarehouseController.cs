@@ -38,7 +38,7 @@ namespace Warehouse_App.Controllers
             var role = await _userManager.GetRolesAsync(user);
             if (user.CompanyId != companyId && role[0] != Roles.SystemAdmin)
             {
-                return Forbid("You do not have permition for this action");
+                return Forbid();
             }
             var company = await appDB.Companies.FindAsync(companyId);
 

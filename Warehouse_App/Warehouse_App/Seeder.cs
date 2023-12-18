@@ -26,6 +26,9 @@ namespace Warehouse_App
             {
                 UserName = "adminas",
                 Email = "adminas@pastas.lt",
+                Name = "Admin",
+                Surname = "Admin",
+                CompanyName = ""
             };
 
             var exist = await _userManager.FindByNameAsync(newAdmin.UserName);
